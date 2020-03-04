@@ -4,51 +4,42 @@ metadata:
   name: source-to-image
 spec:
   buildSteps:
-    - name: s2i-build-as-dockerfile
-      image: quay.io/openshift-pipeline/s2i:nightly
-      workingDir: /workspace/source
+    - name: step-chown
+      image: alpine:latest
+      securityContext:
+        runAsUser: 0
       command:
-        - /usr/local/bin/s2i
+        - /bin/sh
+      args:
+        - -c
+        - chown -v -R 1001:1001 /tekton/home/.docker /var/lib/containers/storage
+      volumeMounts:
+        - name: containers-storage
+          mountPath: /var/lib/containers/storage
+    - name: step-s2i-build
+      image: quay.io/olemefer/source-to-image:latest
+      securityContext:
+        privileged: true
+      workingDir: /workspace/source
+      args:
         - build
         - .
-        - "$(build.builderImage)" # strong type from Build CR
-        - --as-dockerfile
-        - /gen-source/Dockerfile.gen
+        - "$(build.builderImage)"
+        - "$(build.output.image)"
       volumeMounts:
-      - mountPath: /gen-source
-        name: gen-source
-
-    - name: buildah-bud
-      image: quay.io/buildah/stable
-      workingDir: /gen-source
+        - name: containers-storage
+          mountPath: /var/lib/containers/storage
+    - name: step-s2i-push
+      image: quay.io/olemefer/source-to-image:latest
       securityContext:
         privileged: true
       command:
-        - buildah
-        - bud
+        - /usr/bin/buildah
+      args:
+        - push
         - --tls-verify=false
-        - --layers
-        - -f
-        - /gen-source/Dockerfile.gen
-        - -t
-        - $(build.output.image)  # strong type from Build CR
-        - .
+        - $(build.output.image)
+        - docker://$(build.output.image)
       volumeMounts:
-      - mountPath: /var/lib/containers
-        name: varlibcontainers
-      - mountPath: /gen-source
-        name: gen-source
-
-    - command:
-      - buildah
-      - push
-      - --tls-verify=false
-      - $(build.output.image)
-      - docker://$(build.output.image)    # strong type from Build CR
-      image: quay.io/buildah/stable
-      name: push
-      securityContext:
-        privileged: true
-      volumeMounts:
-      - mountPath: /var/lib/containers
-        name: varlibcontainers
+        - name: containers-storage
+          mountPath: /var/lib/containers/storage
