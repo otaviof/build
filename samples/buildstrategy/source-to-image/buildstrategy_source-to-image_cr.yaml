@@ -12,7 +12,7 @@ spec:
         - /bin/sh
       args:
         - -c
-        - chown -v -R 1001:1001 /tekton/home/.docker /var/lib/containers/storage
+        - chown -v -R 1000:1000 /tekton/home/.docker /var/lib/containers/storage
       volumeMounts:
         - name: containers-storage
           mountPath: /var/lib/containers/storage
