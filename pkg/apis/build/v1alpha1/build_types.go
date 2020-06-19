@@ -14,7 +14,6 @@ var (
 
 // BuildSpec defines the desired state of Build
 type BuildSpec struct {
-
 	// Source refers to the Git repository containing the
 	// source code to be built.
 	Source GitSource `json:"source"`
@@ -45,6 +44,10 @@ type BuildSpec struct {
 	// +optional
 	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
 
+	// Runtime represents the runtime-image
+	// +optional
+	Runtime Runtime `json:"runtime,omitempty"`
+
 	// Output refers to the location where the generated
 	// image would be pushed to.
 	Output Image `json:"output"`
@@ -56,7 +59,6 @@ type BuildSpec struct {
 
 // Image refers to an container image with credentials
 type Image struct {
-
 	// ImageURL is the URL where the image will be pushed to.
 	ImageURL string `json:"image"`
 
@@ -64,6 +66,34 @@ type Image struct {
 	// credentials to push the image to the registry
 	// +optional
 	SecretRef *corev1.LocalObjectReference `json:"credentials,omitempty"`
+}
+
+// Runtime represents the runtime-image, created using parts of builder-image, and a different
+// base-image than originally.
+type Runtime struct {
+	// Base runtime base image.
+	// +optional
+	Base Image `json:"base,omitempty"`
+
+	// Env environment variables for runtime.
+	// +optional
+	Env map[string]string `json:"env,omitempty"`
+
+	// Labels map of additional labels to be applied on image.
+	// +optional
+	Labels map[string]string `json:"labels,omitempty"`
+
+	// WorkDir runtime image working directory `WORKDIR`.
+	// +optional
+	WorkDir string `json:"workDir,omitempty"`
+
+	// Directories list of directories to be copied into runtime-image, using colon ":" to split up source and destination paths.
+	// +optional
+	Directories []string `json:"directories,omitempty"`
+
+	// Entrypoint runtime-image entrypoint.
+	// +optional
+	Entrypoint []string `json:"entrypoint,omitempty"`
 }
 
 // BuildStatus defines the observed state of Build
