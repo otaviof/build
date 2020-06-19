@@ -156,6 +156,16 @@ func (r *ReconcileBuild) Reconcile(request reconcile.Request) (reconcile.Result,
 		}
 	}
 
+	// validate if "spec.runtime" attributes are valid
+	if b.Spec.Runtime.Base.ImageURL != "" {
+		if err := r.validateRuntime(b.Spec.Runtime); err != nil {
+			ctxlog.Error(ctx, err, "failed validating runtime attributes", "Build", b.Name)
+			b.Status.Reason = err.Error()
+			updateErr := r.client.Status().Update(context.Background(), b)
+			return reconcile.Result{}, fmt.Errorf("errors: %v %v", err, updateErr)
+		}
+	}
+
 	b.Status.Registered = corev1.ConditionTrue
 	err = r.client.Status().Update(ctx, b)
 	if err != nil {
@@ -163,6 +173,13 @@ func (r *ReconcileBuild) Reconcile(request reconcile.Request) (reconcile.Result,
 		return reconcile.Result{}, err
 	}
 	return reconcile.Result{}, nil
+}
+
+func (r *ReconcileBuild) validateRuntime(runtime buildv1alpha1.Runtime) error {
+	if len(runtime.Directories) == 0 {
+		return fmt.Errorf("Runtime requires 'directories' to copy informed")
+	}
+	return nil
 }
 
 func (r *ReconcileBuild) validateStrategyRef(ctx context.Context, s *build.StrategyRef, ns string) error {
