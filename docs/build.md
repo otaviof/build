@@ -8,6 +8,7 @@
   - [Defining the Builder or Dockerfile](#defining-the-builder-or-dockerfile)
   - [Defining Resources](#defining-resources)
   - [Defining the Output](#defining-the-output)
+  - [Runtime-Image](#Runtime-Image)
 - [Using Finalizers](#using-finalizers)
 
 ## Overview
@@ -52,6 +53,7 @@ The `Build` definition supports the following fields:
   - `spec.resources` - Refers to the compute [resources](https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/) used on the container where the image is built.
   - `spec.parameters` - Refers to a list of `name-value` that could be used to loosely type parameters in the `BuildStrategy`.
   - `spec.dockerfile` - Path to a Dockerfile to be used for building an image. (_Use this path for strategies that require a Dockerfile_)
+  - `spec.runtime` - Runtime-Image settings, to be used for a multi-stage build.
   - `spec.timeout` - Defines a custom timeout. The value needs to be parsable by [ParseDuration](https://golang.org/pkg/time/#ParseDuration), for example `5m`. The default is ten minutes. The value can be overwritten in the `BuildRun`.
   - `metadata.annotations[build.build.dev/build-run-deletion]` - Defines if delete all related BuildRuns when deleting the Build. The default is `false`.
 
@@ -226,6 +228,47 @@ spec:
     credentials:
       name: icr-knbuild
 ```
+
+### Runtime-Image
+
+Runtime-image is a new image composed with build-strategy outcomes. On which you can compose a multi-stage build action, copying parts out the original image into a new one. This feature allows replacing the base-image of any container-image, creating final leaner images, and other use-cases that require multi-stage build.
+
+The following examples illustrates how to use this feature:
+
+```yml
+apiVersion: build.dev/v1alpha1
+kind: Build
+metadata:
+  name: nodejs-ex-runtime
+spec:
+  strategy:
+    name: buildpacks-v3
+    kind: ClusterBuildStrategy
+  source:
+    url: https://github.com/sclorg/nodejs-ex.git
+  output:
+    image: image-registry.openshift-image-registry.svc:5000/build-examples/nodejs-ex
+  runtime:
+    base:
+      image: docker.io/node:latest
+    workDir: /home/node/app
+    directories:
+      - /workspace/source:/home/node/app
+    entrypoint:
+      - npm
+      - start
+```
+
+This build will produce a NodeJS based application where a single directory is imported from the image built by buildpacks strategy.
+
+Please consider the description of the attributes in `.spec.runtime`:
+
+- `spec.runtime.base`: specifies the runtime base-image to be used, using Image as type
+- `spec.runtime.workDir`: path to WORKDIR in runtime-image
+- `spec.runtime.env`: runtime-image additional environment variables, key-value
+- `spec.runtime.labels`: runtime-image additional labels, key-value
+- `spec.runtime.directories`: list of directories paths to be copied to runtime-image, those can be defined as `<source>:<destination>` split by colon (`:`)
+- `spec.runtime.entrypoint`: entrypoint command, specified as a list
 
 ## Using Finalizers
 
