@@ -208,12 +208,6 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 		if err != nil {
 			return reconcile.Result{}, err
 		}
-		if build.Spec.Runtime.Base.ImageURL != "" {
-			if err := AmendBuildStrategyWithRuntimeImage(buildStrategy, build); err != nil {
-				updateErr := r.updateBuildRunErrorStatus(ctx, buildRun, err.Error())
-				return reconcile.Result{}, fmt.Errorf("errors: %v %v", err, updateErr)
-			}
-		}
 		if buildStrategy != nil {
 			generatedTaskRun, err = GenerateTaskRun(build, buildRun, serviceAccount.Name, buildStrategy.Spec.BuildSteps)
 			if err != nil {
@@ -225,12 +219,6 @@ func (r *ReconcileBuildRun) Reconcile(request reconcile.Request) (reconcile.Resu
 		clusterBuildStrategy, err := r.retrieveClusterBuildStrategy(ctx, build, request)
 		if err != nil {
 			return reconcile.Result{}, err
-		}
-		if build.Spec.Runtime.Base.ImageURL != "" {
-			if err := AmendClusterBuildStrategyWithRuntimeImage(clusterBuildStrategy, build); err != nil {
-				updateErr := r.updateBuildRunErrorStatus(ctx, buildRun, err.Error())
-				return reconcile.Result{}, fmt.Errorf("errors: %v %v", err, updateErr)
-			}
 		}
 		if clusterBuildStrategy != nil {
 			generatedTaskRun, err = GenerateTaskRun(build, buildRun, serviceAccount.Name, clusterBuildStrategy.Spec.BuildSteps)
@@ -286,7 +274,7 @@ func (r *ReconcileBuildRun) retrieveServiceAccount(ctx context.Context, build *b
 		serviceAccount.Name = serviceAccountName
 		serviceAccount.Namespace = buildRun.Namespace
 
-		// Create the service account, use CreateOrUpdate as it might exist already from a previous reconcilation that
+		// Create the service account, use CreateOrUpdate as it might exist already from a previous reconciliation that
 		// succeeded to create the service account but failed to update the build run that references it
 		op, err := controllerutil.CreateOrUpdate(context.TODO(), r.client, serviceAccount, func() error {
 			serviceAccount.SetLabels(map[string]string{buildv1alpha1.LabelBuildRun: buildRun.Name})

@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	buildv1alpha1 "github.com/redhat-developer/build/pkg/apis/build/v1alpha1"
+	v1beta1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -78,16 +79,14 @@ ENTRYPOINT [ "/bin/bash", "-x", "-c" ]`,
 	})
 
 	Context("amend build-strategy with extra steps", func() {
-		bs := &buildv1alpha1.BuildStrategy{
-			Spec: buildv1alpha1.BuildStrategySpec{
-				BuildSteps: []buildv1alpha1.BuildStep{},
-			},
+		taskSpec := &v1beta1.TaskSpec{
+			Steps: []v1beta1.Step{},
 		}
 
-		It("expect to have build-strategy amended", func() {
-			err := amendBuildStrategySpecWithRuntimeImage(&bs.Spec, b)
+		It("expect to have Tekton's Task amended", func() {
+			err := AmendTaskSpecWithRuntimeImage(taskSpec, b)
 			Expect(err).ToNot(HaveOccurred())
-			Expect(len(bs.Spec.BuildSteps)).To(Equal(2))
+			Expect(len(taskSpec.Steps)).To(Equal(2))
 		})
 	})
 })

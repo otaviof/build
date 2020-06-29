@@ -9,6 +9,7 @@ import (
 	"text/template"
 
 	buildv1alpha1 "github.com/redhat-developer/build/pkg/apis/build/v1alpha1"
+	v1beta1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	v1 "k8s.io/api/core/v1"
 )
 
@@ -98,7 +99,7 @@ func renderRuntimeDockerfile(b *buildv1alpha1.Build) (*bytes.Buffer, error) {
 
 // runtimeDockerfileStep trigger the rendering of Dockerfile.runtime, and use this input as a
 // build-step to create a new file.
-func runtimeDockerfileStep(b *buildv1alpha1.Build) (*buildv1alpha1.BuildStep, error) {
+func runtimeDockerfileStep(b *buildv1alpha1.Build) (*v1beta1.Step, error) {
 	dockerfile, err := renderRuntimeDockerfile(b)
 	if err != nil {
 		return nil, err
@@ -118,11 +119,11 @@ func runtimeDockerfileStep(b *buildv1alpha1.Build) (*buildv1alpha1.BuildStep, er
 			fmt.Sprintf("echo '%s' >%s", dockerfile, runtimeDockerfilePath),
 		},
 	}
-	return &buildv1alpha1.BuildStep{Container: container}, nil
+	return &v1beta1.Step{Container: container}, nil
 }
 
-// runtimeBuildAndPushStep returns a build-step to build the Dockerfile.runtime with kaniko.
-func runtimeBuildAndPushStep(b *buildv1alpha1.Build) *buildv1alpha1.BuildStep {
+// runtimeBuildAndPushStep returns a Task step to build the Dockerfile.runtime with kaniko.
+func runtimeBuildAndPushStep(b *buildv1alpha1.Build) *v1beta1.Step {
 	contextDir := workspaceDir
 	if b != nil && b.Spec.Source.ContextDir != nil {
 		contextDir = path.Join(workspaceDir, *b.Spec.Source.ContextDir)
@@ -157,38 +158,22 @@ func runtimeBuildAndPushStep(b *buildv1alpha1.Build) *buildv1alpha1.BuildStep {
 			fmt.Sprintf("--destination=%s", b.Spec.Output.ImageURL),
 		},
 	}
-	return &buildv1alpha1.BuildStep{Container: container}
+	return &v1beta1.Step{Container: container}
 }
 
-// amendBuildStrategySpecWithRuntimeImage add more steps to build-strategy in order to implement the
-// creation of a runtime-image.
-func amendBuildStrategySpecWithRuntimeImage(
-	spec *buildv1alpha1.BuildStrategySpec,
+// AmendTaskSpecWithRuntimeImage add more steps to Tekton's Task in order to create the
+// runtime-image.
+func AmendTaskSpecWithRuntimeImage(
+	spec *v1beta1.TaskSpec,
 	b *buildv1alpha1.Build,
 ) error {
 	step, err := runtimeDockerfileStep(b)
 	if err != nil {
 		return err
 	}
-	spec.BuildSteps = append(spec.BuildSteps, *step)
+	spec.Steps = append(spec.Steps, *step)
 
 	step = runtimeBuildAndPushStep(b)
-	spec.BuildSteps = append(spec.BuildSteps, *step)
+	spec.Steps = append(spec.Steps, *step)
 	return nil
-}
-
-// AmendBuildStrategyWithRuntimeImage amend spec section with runtime steps.
-func AmendBuildStrategyWithRuntimeImage(
-	bs *buildv1alpha1.BuildStrategy,
-	b *buildv1alpha1.Build,
-) error {
-	return amendBuildStrategySpecWithRuntimeImage(&bs.Spec, b)
-}
-
-// AmendClusterBuildStrategyWithRuntimeImage amend spec section with runtime steps.
-func AmendClusterBuildStrategyWithRuntimeImage(
-	cbs *buildv1alpha1.ClusterBuildStrategy,
-	b *buildv1alpha1.Build,
-) error {
-	return amendBuildStrategySpecWithRuntimeImage(&cbs.Spec, b)
 }

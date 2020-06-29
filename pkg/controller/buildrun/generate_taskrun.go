@@ -160,6 +160,14 @@ func GenerateTaskSpec(build *buildv1alpha1.Build, buildRun *buildv1alpha1.BuildR
 	}
 
 	generatedTaskSpec.Volumes = vols
+
+	// checking for runtime-image settings, and appending more steps to the strategy
+	if build.Spec.Runtime.Base.ImageURL != "" {
+		if err := AmendTaskSpecWithRuntimeImage(&generatedTaskSpec, build); err != nil {
+			return nil, err
+		}
+	}
+
 	return &generatedTaskSpec, nil
 }
 
