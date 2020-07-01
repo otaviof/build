@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 	build "github.com/redhat-developer/build/pkg/apis/build/v1alpha1"
 	"github.com/redhat-developer/build/pkg/config"
+	"github.com/redhat-developer/build/pkg/controller/utils"
 	"github.com/redhat-developer/build/pkg/ctxlog"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -157,11 +158,11 @@ func (r *ReconcileBuild) Reconcile(request reconcile.Request) (reconcile.Result,
 	}
 
 	// validate if "spec.runtime" attributes are valid
-	if b.Spec.Runtime.Base.ImageURL != "" {
+	if utils.IsRuntimeDefined(b) {
 		if err := r.validateRuntime(b.Spec.Runtime); err != nil {
 			ctxlog.Error(ctx, err, "failed validating runtime attributes", "Build", b.Name)
 			b.Status.Reason = err.Error()
-			updateErr := r.client.Status().Update(context.Background(), b)
+			updateErr := r.client.Status().Update(ctx, b)
 			return reconcile.Result{}, fmt.Errorf("errors: %v %v", err, updateErr)
 		}
 	}
@@ -175,9 +176,9 @@ func (r *ReconcileBuild) Reconcile(request reconcile.Request) (reconcile.Result,
 	return reconcile.Result{}, nil
 }
 
-func (r *ReconcileBuild) validateRuntime(runtime buildv1alpha1.Runtime) error {
+func (r *ReconcileBuild) validateRuntime(runtime *buildv1alpha1.Runtime) error {
 	if len(runtime.Directories) == 0 {
-		return fmt.Errorf("Runtime requires 'directories' to copy informed")
+		return fmt.Errorf("the property 'spec.runtime.directories' must not be empty")
 	}
 	return nil
 }

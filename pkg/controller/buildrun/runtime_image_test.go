@@ -19,7 +19,7 @@ var _ = Describe("runtime-image", func() {
 			Output: buildv1alpha1.Image{
 				ImageURL: "test/output-image:latest",
 			},
-			Runtime: buildv1alpha1.Runtime{
+			Runtime: &buildv1alpha1.Runtime{
 				Base: buildv1alpha1.Image{
 					ImageURL: "test/base-image:latest",
 				},

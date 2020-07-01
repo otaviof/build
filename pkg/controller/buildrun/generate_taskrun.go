@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	buildv1alpha1 "github.com/redhat-developer/build/pkg/apis/build/v1alpha1"
+	"github.com/redhat-developer/build/pkg/controller/utils"
 	taskv1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
 	v1beta1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	corev1 "k8s.io/api/core/v1"
@@ -162,7 +163,7 @@ func GenerateTaskSpec(build *buildv1alpha1.Build, buildRun *buildv1alpha1.BuildR
 	generatedTaskSpec.Volumes = vols
 
 	// checking for runtime-image settings, and appending more steps to the strategy
-	if build.Spec.Runtime.Base.ImageURL != "" {
+	if utils.IsRuntimeDefined(build) {
 		if err := AmendTaskSpecWithRuntimeImage(&generatedTaskSpec, build); err != nil {
 			return nil, err
 		}
