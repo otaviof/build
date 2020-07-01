@@ -140,6 +140,53 @@ spec:
                     value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
                   type: object
               type: object
+            runtime:
+              description: Runtime represents the runtime-image
+              properties:
+                base:
+                  description: Base runtime base image.
+                  properties:
+                    credentials:
+                      description: SecretRef is a reference to the Secret containing
+                        the credentials to push the image to the registry
+                      properties:
+                        name:
+                          description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                            TODO: Add other useful fields. apiVersion, kind, uid?'
+                          type: string
+                      type: object
+                    image:
+                      description: ImageURL is the URL where the image will be pushed
+                        to.
+                      type: string
+                  required:
+                  - image
+                  type: object
+                directories:
+                  description: Directories list of directories to be copied into runtime-image,
+                    using colon ":" to split up source and destination paths.
+                  items:
+                    type: string
+                  type: array
+                entrypoint:
+                  description: Entrypoint runtime-image entrypoint.
+                  items:
+                    type: string
+                  type: array
+                env:
+                  additionalProperties:
+                    type: string
+                  description: Env environment variables for runtime.
+                  type: object
+                labels:
+                  additionalProperties:
+                    type: string
+                  description: Labels map of additional labels to be applied on image.
+                  type: object
+                workDir:
+                  description: WorkDir runtime image working directory `WORKDIR`.
+                  type: string
+              type: object
             source:
               description: Source refers to the Git repository containing the source
                 code to be built.

@@ -171,6 +171,11 @@ func (in *BuildRunSpec) DeepCopyInto(out *BuildRunSpec) {
 		*out = new(metav1.Duration)
 		**out = **in
 	}
+	if in.Output != nil {
+		in, out := &in.Output, &out.Output
+		*out = new(Image)
+		(*in).DeepCopyInto(*out)
+	}
 	return
 }
 
@@ -251,7 +256,11 @@ func (in *BuildSpec) DeepCopyInto(out *BuildSpec) {
 		*out = new(v1.ResourceRequirements)
 		(*in).DeepCopyInto(*out)
 	}
-	in.Runtime.DeepCopyInto(&out.Runtime)
+	if in.Runtime != nil {
+		in, out := &in.Runtime, &out.Runtime
+		*out = new(Runtime)
+		(*in).DeepCopyInto(*out)
+	}
 	in.Output.DeepCopyInto(&out.Output)
 	if in.Timeout != nil {
 		in, out := &in.Timeout, &out.Timeout

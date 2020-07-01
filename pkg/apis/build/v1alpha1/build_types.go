@@ -46,7 +46,7 @@ type BuildSpec struct {
 
 	// Runtime represents the runtime-image
 	// +optional
-	Runtime Runtime `json:"runtime,omitempty"`
+	Runtime *Runtime `json:"runtime,omitempty"`
 
 	// Output refers to the location where the generated
 	// image would be pushed to.
