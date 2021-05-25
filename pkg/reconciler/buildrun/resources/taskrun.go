@@ -134,8 +134,16 @@ func GenerateTaskSpec(
 		generatedTaskSpec.Params = append(generatedTaskSpec.Params, InputBuilder)
 	}
 
-	// define results, steps and volumes for sources
-	AmendTaskSpecWithSources(cfg, &generatedTaskSpec, build)
+	// TODO: remove this work around later on
+	annotations := buildRun.GetAnnotations()
+	_, exists := annotations["wait-for-upload"]
+
+	if buildRun.Spec.WaitForUpload || exists {
+		AmendTaskSpecWaitForUpload(&generatedTaskSpec)
+	} else {
+		// define results, steps and volumes for sources
+		AmendTaskSpecWithSources(cfg, &generatedTaskSpec, build)
+	}
 
 	// define the steps coming from the build strategy
 	for _, containerValue := range buildSteps {
