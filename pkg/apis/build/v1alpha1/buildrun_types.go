@@ -40,6 +40,9 @@ type BuildRunSpec struct {
 	// image would be pushed to. It will overwrite the output image in build spec
 	// +optional
 	Output *Image `json:"output,omitempty"`
+
+	// +optional
+	WaitForUpload bool `json:"waitForUpload,omitempty"`
 }
 
 // BuildRunStatus defines the observed state of BuildRun
